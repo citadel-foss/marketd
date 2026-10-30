@@ -20,6 +20,17 @@ pub struct ApiFidelityBond {
     pub cert_sig: String,
 }
 
+#[derive(Serialize, Clone, Debug)]
+pub struct ApiLightningOffer {
+    pub swap_in: bool,
+    pub swap_out: bool,
+    pub base_fee: u64,
+    pub amount_relative_fee_pct: f64,
+    pub min_size: u64,
+    pub max_swap_in: u64,
+    pub max_swap_out: u64,
+}
+
 /// Offer payload — populated only when the taker has successfully fetched
 /// the maker's advertisement.
 #[derive(Serialize, Clone, Debug)]
@@ -36,6 +47,8 @@ pub struct ApiOffer {
     pub minimum_locktime: u16,
     pub tweakable_point: String,
     pub fidelity_bond: ApiFidelityBond,
+    /// Optional Lightning submarine-swap terms advertised by newer makers.
+    pub lightning: Option<ApiLightningOffer>,
 }
 
 impl ApiOffer {
@@ -63,6 +76,15 @@ impl ApiOffer {
                 cert_hash: offer.fidelity.cert_hash.to_string(),
                 cert_sig: hex::encode(offer.fidelity.cert_sig.serialize_der().as_ref()),
             },
+            lightning: offer.lightning.map(|lightning| ApiLightningOffer {
+                swap_in: lightning.swap_in,
+                swap_out: lightning.swap_out,
+                base_fee: lightning.base_fee,
+                amount_relative_fee_pct: lightning.amount_relative_fee_pct,
+                min_size: lightning.min_size,
+                max_swap_in: lightning.max_swap_in,
+                max_swap_out: lightning.max_swap_out,
+            }),
         }
     }
 }
@@ -168,8 +190,13 @@ pub struct ApiMaker {
     pub address: String,
     pub state: ApiMakerState,
     pub protocol: Option<&'static str>,
+    /// Feature names from the maker's latest OpenSwap handshake.
+    pub features: Vec<String>,
+    pub fidelity_expiry_height: Option<u32>,
     pub timestamp: u64,
     pub last_offer_update_ts: Option<u64>,
+    pub first_seen_ts: Option<u64>,
+    pub backend_retry_pending: bool,
     pub next_offer_check_ts: Option<u64>,
     pub offer: Option<ApiOffer>,
 }
@@ -180,8 +207,12 @@ impl ApiMaker {
             address: candidate.address.to_string(),
             state: (&candidate.state).into(),
             protocol: candidate.protocol.as_ref().map(protocol_label),
+            features: candidate.features.clone(),
+            fidelity_expiry_height: candidate.fidelity_expiry_height,
             timestamp,
             last_offer_update_ts: candidate.last_offer_update_ts,
+            first_seen_ts: candidate.first_seen_ts,
+            backend_retry_pending: candidate.backend_retry_pending,
             next_offer_check_ts: candidate.next_offer_check_ts,
             offer: candidate.offer.as_ref().map(ApiOffer::from_openswap),
         }

@@ -8,8 +8,8 @@
 mod common;
 
 use marketd::state::{
-    ApiBanReason, ApiFidelityBond, ApiMaker, ApiMakerState, ApiOffer, ApiOutpoint,
-    ApiUnavailableReason, new_store,
+    ApiBanReason, ApiFidelityBond, ApiLightningOffer, ApiMaker, ApiMakerState, ApiOffer,
+    ApiOutpoint, ApiUnavailableReason, new_store,
 };
 use serde_json::Value;
 
@@ -50,8 +50,12 @@ fn mainnet_routes_use_the_independent_electrum_store() {
         address: "mainnet-maker.onion".into(),
         state: ApiMakerState::Good,
         protocol: Some("taproot"),
+        features: vec!["taproot".into()],
+        fidelity_expiry_height: Some(900_000),
         timestamp: 1_700_000_001,
         last_offer_update_ts: None,
+        first_seen_ts: Some(1_700_000_000),
+        backend_retry_pending: false,
         next_offer_check_ts: None,
         offer: None,
     });
@@ -99,8 +103,12 @@ fn makers_returns_seeded_data() {
             address: "127.0.0.1:6102".into(),
             state: ApiMakerState::Good,
             protocol: Some("taproot"),
+            features: vec!["taproot".into()],
+            fidelity_expiry_height: Some(800_000),
             timestamp: 1_234_567_890,
             last_offer_update_ts: Some(1_234_567_890),
+            first_seen_ts: Some(1_234_567_000),
+            backend_retry_pending: false,
             next_offer_check_ts: Some(1_234_567_950),
             offer: Some(ApiOffer {
                 name: Some("Alice's Maker".into()),
@@ -122,6 +130,15 @@ fn makers_returns_seeded_data() {
                     cert_hash: "feedface".into(),
                     cert_sig: "303d".into(),
                 },
+                lightning: Some(ApiLightningOffer {
+                    swap_in: true,
+                    swap_out: false,
+                    base_fee: 500,
+                    amount_relative_fee_pct: 0.25,
+                    min_size: 25_000,
+                    max_swap_in: 2_000_000,
+                    max_swap_out: 0,
+                }),
             }),
         });
         // An unavailable maker — no offer payload, but still appears.
@@ -134,8 +151,12 @@ fn makers_returns_seeded_data() {
                 attempts: 3,
             },
             protocol: None,
+            features: vec![],
+            fidelity_expiry_height: None,
             timestamp: 1_234_567_890,
             last_offer_update_ts: None,
+            first_seen_ts: Some(1_234_567_000),
+            backend_retry_pending: false,
             next_offer_check_ts: Some(1_234_568_000),
             offer: None,
         });
@@ -147,8 +168,12 @@ fn makers_returns_seeded_data() {
                 recorded_at_ts: 1_234_567_800,
             },
             protocol: None,
+            features: vec![],
+            fidelity_expiry_height: None,
             timestamp: 1_234_567_890,
             last_offer_update_ts: None,
+            first_seen_ts: Some(1_234_567_000),
+            backend_retry_pending: false,
             next_offer_check_ts: None,
             offer: None,
         });
@@ -176,9 +201,14 @@ fn makers_returns_seeded_data() {
     assert_eq!(good["address"], "127.0.0.1:6102");
     assert_eq!(good["state"]["kind"], "good");
     assert_eq!(good["protocol"], "taproot");
+    assert_eq!(good["features"][0], "taproot");
+    assert_eq!(good["fidelity_expiry_height"], 800_000);
+    assert_eq!(good["backend_retry_pending"], false);
     assert_eq!(good["offer"]["name"], "Alice's Maker");
     assert_eq!(good["offer"]["base_fee"], 1000);
     assert_eq!(good["offer"]["fidelity_bond"]["amount"], 5_000_000);
+    assert_eq!(good["offer"]["lightning"]["swap_in"], true);
+    assert_eq!(good["offer"]["lightning"]["max_swap_in"], 2_000_000);
     assert_eq!(
         good["offer"]["fidelity_bond"]["outpoint"]["txid"],
         "deadbeef"

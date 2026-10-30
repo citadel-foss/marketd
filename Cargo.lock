@@ -248,6 +248,7 @@ dependencies = [
  "rand_core 0.6.4",
  "serde",
  "unicode-normalization",
+ "zeroize",
 ]
 
 [[package]]
@@ -1491,7 +1492,7 @@ checksum = "c08d65885ee38876c4f86fa503fb49d7b507c2b62552df7c70b2fce627e06381"
 [[package]]
 name = "openswap"
 version = "0.2.3"
-source = "git+https://github.com/citadel-foss/openswap?branch=master#8e431bf21b95682ce9f248f901a882eb4478e4e4"
+source = "git+https://github.com/citadel-foss/openswap?branch=master#08f91945b3c85528a843bc386084e2c4501b7f4c"
 dependencies = [
  "aes-gcm",
  "bip39",
@@ -1514,6 +1515,7 @@ dependencies = [
  "serde_json",
  "sha2",
  "sha3",
+ "signal-hook",
  "tempfile",
  "tungstenite",
  "zeroize",

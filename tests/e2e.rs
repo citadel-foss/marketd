@@ -38,7 +38,6 @@ use bitcoind::bitcoincore_rpc::{
 use marketd::{state::new_store, sync::sync_loop};
 use openswap::{
     maker::{MakerBehavior, MakerServer, MakerServerConfig, start_server},
-    protocol::ProtocolVersion,
     taker::{Taker, TakerInitConfig, api::ConnectionType},
     wallet::{AddressType, BackendConfig, CoreRpcConfig},
 };
@@ -75,6 +74,7 @@ fn taker_init_and_http_layer_against_regtest() {
         password: Some("integration-test".into()),
         connection_type: ConnectionType::Clearnet,
         nostr_relays: vec![],
+        ..TakerInitConfig::default()
     };
 
     let taker = Taker::init(init_config).expect("Taker::init against regtest");
@@ -135,7 +135,6 @@ fn maker_offer_flows_through_to_api_offers() {
         time_relative_fee_pct: 0.001,
         required_confirms: 1,
         check_blocklist: false,
-        supported_protocols: vec![ProtocolVersion::Legacy, ProtocolVersion::Taproot],
         fidelity_amount: 5_000_000,
         fidelity_timelock: 950,
         fidelity_feerate: MakerServerConfig::default().fidelity_feerate,
@@ -151,6 +150,7 @@ fn maker_offer_flows_through_to_api_offers() {
         password: Some("integration-test".into()),
         nostr_relays: vec![NOSTR_RELAY.into()],
         name: "marketd-test-maker".into(),
+        ..MakerServerConfig::default()
     };
 
     let mut maker = MakerServer::init(maker_config).expect("MakerServer::init");
@@ -230,6 +230,7 @@ fn maker_offer_flows_through_to_api_offers() {
         password: Some("integration-test".into()),
         connection_type: ConnectionType::Clearnet,
         nostr_relays: vec![NOSTR_RELAY.into()],
+        ..TakerInitConfig::default()
     };
 
     let sync_store = store.clone();
